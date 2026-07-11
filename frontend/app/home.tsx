@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -13,7 +13,7 @@ import {
   Alert,
   RefreshControl
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router'; 
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'; 
 import { Ionicons } from '@expo/vector-icons'; 
 import { API_BASE_URL } from '../config/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -68,9 +68,11 @@ export default function HomePage() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, [isLoggedIn]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProducts();
+    }, [isLoggedIn])
+  );
 
   useEffect(() => {
     let filtered = [...products];

@@ -5,15 +5,24 @@ const path = require('path');
 const productController = require('../controllers/productController');
 const auth = require('../middleware/auth');
 
-// 1. Configure Multer Storage for Seller Image Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Files will be saved in the 'uploads' directory at the root
-        cb(null, 'uploads/'); 
-    },
-    filename: (req, file, cb) => {
-        // Create a unique filename using the current timestamp
-        cb(null, `${Date.now()}-${file.originalname}`); 
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
+require('dotenv').config();
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Configure Multer Storage for Seller Image Uploads via Cloudinary
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'ecommerce_products',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 800, height: 800, crop: 'limit' }] // Optional: resize images
     }
 });
 

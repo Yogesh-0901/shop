@@ -139,7 +139,7 @@ exports.createProduct = async (req, res) => {
         }
 
         // Get image URL
-        const imageUrl = image || (req.file ? `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}` : '');
+        const imageUrl = image || (req.file ? req.file.path : '');
 
         if (!imageUrl) {
             return res.status(400).json({ error: "Please provide an image URL or upload a product image" });
@@ -209,10 +209,11 @@ exports.updateProduct = async (req, res) => {
         if (category) product.category = category.trim();
         if (section) product.section = section;
         if (stock !== undefined) product.stock = Number(stock);
-        if (image) product.image = image;
-        if (req.file) product.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-
-        await product.save();
+        if (image) {
+            product.image = image;
+        } else if (req.file) {
+            product.image = req.file.path;
+        } await product.save();
         res.status(200).json({ message: "Product updated successfully", product });
     } catch (error) {
         console.error('Update product error:', error);

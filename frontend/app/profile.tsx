@@ -96,7 +96,11 @@ export default function ProfilePage() {
 
   const handleUploadProduct = async () => {
     if (!productName || !productPrice || !productDescription || !selectedImage) {
-      Alert.alert("Error", "Please fill all fields and select an image");
+      if (Platform.OS === 'web') {
+        window.alert("Please fill all fields and select an image");
+      } else {
+        Alert.alert("Error", "Please fill all fields and select an image");
+      }
       return;
     }
 
@@ -125,15 +129,22 @@ export default function ProfilePage() {
       }
 
       await productService.createProduct(formData as any);
-      
-      Alert.alert("Success", "Product uploaded successfully!");
+      if (Platform.OS === 'web') {
+        window.alert("Product uploaded successfully!");
+      } else {
+        Alert.alert("Success", "Product uploaded successfully!");
+      }
       setProductName('');
       setProductPrice('');
       setProductDescription('');
       setSelectedImage(null);
     } catch (error: any) {
       console.error("Upload error:", error);
-      Alert.alert("Error", error.message || "Failed to upload product. Check console for details.");
+      if (Platform.OS === 'web') {
+        window.alert(error.message || "Failed to upload product. Check console for details.");
+      } else {
+        Alert.alert("Error", error.message || "Failed to upload product. Check console for details.");
+      }
     } finally {
       setIsUploading(false);
     }
