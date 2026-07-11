@@ -44,8 +44,9 @@ export default function ForgotPassword() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
+    const passwordRegex: RegExp = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      Alert.alert("Weak Password", "Password must be at least 8 characters long and contain both letters and numbers");
       return;
     }
 

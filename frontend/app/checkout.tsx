@@ -10,7 +10,8 @@ import {
   Dimensions,
   Platform,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  TextInput
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
@@ -29,6 +30,15 @@ const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<DeliveryCarrier>('fedex');
+
+  const [name, setName] = useState('John Doe');
+  const [phone, setPhone] = useState('1234567890');
+  const [address, setAddress] = useState('123 Main St');
+  const [city, setCity] = useState('New York');
+  const [state, setState] = useState('NY');
+  const [zip, setZip] = useState('10001');
+  const [paymentMethod, setPaymentMethod] = useState('Credit Card');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const deliveryFee = 15;
   const total = subtotal + deliveryFee;
@@ -51,22 +61,33 @@ const CheckoutPage: React.FC = () => {
   }, []);
 
   const handleSubmitOrder = async () => {
+    setErrorMessage('');
+    
     if (subtotal === 0) {
+      setErrorMessage("You cannot place an order with an empty cart.");
       Alert.alert("Empty Cart", "You cannot place an order with an empty cart.");
+      return;
+    }
+
+    if (!name || !phone || !address || !city || !state || !zip) {
+      setErrorMessage("Please fill in all shipping details.");
+      Alert.alert("Missing Details", "Please fill in all shipping details.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const fullAddress = `${name}, ${phone}, ${address}, ${city}, ${state} ${zip}`;
       await orderService.createOrder(
         selectedDelivery,
-        "3 NewBridge, Hills, Canada", // Using hardcoded address from UI
-        "Credit Card" // Using hardcoded payment from UI
+        fullAddress,
+        paymentMethod
       );
       
-      router.push('/success' as any); 
+      router.push('/success'); 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Something went wrong.";
+      setErrorMessage(errorMsg);
       Alert.alert("Checkout Error", errorMsg);
     } finally {
       setIsSubmitting(false);
@@ -95,24 +116,40 @@ const CheckoutPage: React.FC = () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        <Text style={styles.sectionTitle}>Shipping address</Text>
-        <View style={styles.addressCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.addressName}>Jony ,</Text>
-            <TouchableOpacity><Text style={styles.changeLink}>change</Text></TouchableOpacity>
+        {errorMessage ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
-          <Text style={styles.addressDetail}>3 NewBridge,{"\n"}Hills, Canada</Text>
+        ) : null}
+
+        <Text style={styles.sectionTitle}>Shipping details</Text>
+        <View style={styles.formCard}>
+          <TextInput style={styles.input} placeholder="Full Name" placeholderTextColor="#999" value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="Phone Number" placeholderTextColor="#999" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+          <TextInput style={styles.input} placeholder="Delivery Address" placeholderTextColor="#999" value={address} onChangeText={setAddress} />
+          <View style={styles.row}>
+            <TextInput style={[styles.input, { flex: 1, marginRight: 10 }]} placeholder="City" placeholderTextColor="#999" value={city} onChangeText={setCity} />
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="State" placeholderTextColor="#999" value={state} onChangeText={setState} />
+          </View>
+          <TextInput style={styles.input} placeholder="Postal Code" placeholderTextColor="#999" keyboardType="number-pad" value={zip} onChangeText={setZip} />
         </View>
 
         <Text style={styles.sectionTitle}>Payment</Text>
         <View style={styles.paymentCard}>
-          <View style={styles.paymentContent}>
-            <View style={styles.cardIconBox}>
-               <FontAwesome name="cc-mastercard" size={28} color="#EB001B" />
-            </View>
-            <Text style={styles.cardNumber}>**** **** **** 3947</Text>
-          </View>
-          <TouchableOpacity><Text style={styles.changeLink}>change</Text></TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.paymentMethod, paymentMethod === 'Credit Card' && styles.selectedPayment]} 
+            onPress={() => setPaymentMethod('Credit Card')}
+          >
+            <FontAwesome name="credit-card" size={24} color={paymentMethod === 'Credit Card' ? "#05103A" : "#999"} />
+            <Text style={[styles.paymentText, paymentMethod === 'Credit Card' && styles.selectedPaymentText]}>Credit Card</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.paymentMethod, paymentMethod === 'Cash on Delivery' && styles.selectedPayment]} 
+            onPress={() => setPaymentMethod('Cash on Delivery')}
+          >
+            <Ionicons name="cash-outline" size={26} color={paymentMethod === 'Cash on Delivery' ? "#05103A" : "#999"} />
+            <Text style={[styles.paymentText, paymentMethod === 'Cash on Delivery' && styles.selectedPaymentText]}>Cash on Delivery</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Delivery Method</Text>
@@ -184,17 +221,18 @@ const styles = StyleSheet.create({
   iconButton: { padding: 4 },
   headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#000' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  errorContainer: { backgroundColor: '#FFEBEB', padding: 12, borderRadius: 10, marginTop: 15, borderWidth: 1, borderColor: '#FF3B30' },
+  errorText: { color: '#FF3B30', fontSize: 14, textAlign: 'center', fontWeight: 'bold' },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginTop: 30, marginBottom: 15, color: '#000' },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  addressCard: { backgroundColor: '#FFF', borderRadius: 15, padding: 20, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  addressName: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  changeLink: { color: '#E91E63', fontSize: 14, fontWeight: '600' },
-  addressDetail: { fontSize: 14, color: '#666', lineHeight: 22 },
-  paymentCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 15, padding: 20, alignItems: 'center', justifyContent: 'space-between', elevation: 2 },
-  paymentContent: { flexDirection: 'row', alignItems: 'center' },
-  cardIconBox: { backgroundColor: '#FFF', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, marginRight: 15, elevation: 1 },
-  cardNumber: { fontSize: 16, color: '#000', fontWeight: '500' },
+  formCard: { backgroundColor: '#FFF', borderRadius: 15, padding: 20, elevation: 2 },
+  input: { backgroundColor: '#F5F5F5', borderRadius: 10, padding: 15, marginBottom: 15, fontSize: 14, color: '#000' },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  paymentCard: { flexDirection: 'row', justifyContent: 'space-between' },
+  paymentMethod: { flex: 1, backgroundColor: '#FFF', borderRadius: 15, padding: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent', marginHorizontal: 5, elevation: 2 },
+  selectedPayment: { borderColor: '#05103A' },
+  paymentText: { marginTop: 8, fontSize: 13, color: '#999', fontWeight: 'bold' },
+  selectedPaymentText: { color: '#05103A' },
   deliveryGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   deliveryBox: { backgroundColor: '#FFF', width: (width - 60) / 3, height: 80, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent', elevation: 1 },
   selectedBox: { borderColor: '#05103A' },

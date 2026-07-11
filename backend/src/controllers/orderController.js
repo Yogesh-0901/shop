@@ -105,3 +105,59 @@ exports.getUserOrders = async (req, res) => {
         res.status(500).json({ error: "Failed to fetch orders: " + error.message });
     }
 };
+
+/**
+ * 3. Fetch orders for a specific seller
+ * Finds all orders containing at least one product owned by the seller.
+ */
+exports.getSellerOrders = async (req, res) => {
+    try {
+        const sellerId = req.user.userId;
+
+        // 1. Find all products owned by this seller
+        const sellerProducts = await Product.find({ seller: sellerId }, '_id');
+        const sellerProductIds = sellerProducts.map(p => p._id.toString());
+
+        if (sellerProductIds.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // 2. Find all orders that contain at least one of these products
+        const orders = await Order.find({
+            'items.productId': { $in: sellerProductIds }
+        }).sort({ createdAt: -1 });
+
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Get seller orders error:', error);
+        res.status(500).json({ error: "Failed to fetch seller orders" });
+    }
+};
+
+/**
+ * 4. Update Order Status (Seller only)
+ */
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const orderId = req.params.id;
+
+        const validStatuses = ['Processing', 'Shipped', 'Delivered', 'Cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: "Invalid status update" });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+
+        order.status = status;
+        await order.save();
+
+        res.status(200).json({ message: "Order status updated successfully", order });
+    } catch (error) {
+        console.error('Update order status error:', error);
+        res.status(500).json({ error: "Failed to update order status" });
+    }
+};

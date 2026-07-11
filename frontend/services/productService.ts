@@ -53,7 +53,6 @@ class ProductService {
       const response = await fetch(`${API_BASE_URL}/api/products${queryString}`, {
         method: 'GET',
         headers: defaultHeaders(),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -88,7 +87,6 @@ class ProductService {
       const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
         method: 'GET',
         headers: defaultHeaders(),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -113,7 +111,6 @@ class ProductService {
         method: 'POST',
         headers: defaultHeaders(token || undefined),
         body: JSON.stringify(review),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -142,7 +139,6 @@ class ProductService {
           'Authorization': `Bearer ${token}`,
         },
         body: productData,
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -171,6 +167,77 @@ class ProductService {
       );
     } catch (error) {
       console.error('Error searching products:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch products for the logged-in seller
+   */
+  async getSellerProducts(): Promise<Product[]> {
+    try {
+      const token = await authService.getToken();
+      const response = await fetch(`${API_BASE_URL}/api/products/seller`, {
+        method: 'GET',
+        headers: defaultHeaders(token || undefined),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch seller products');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching seller products:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a product (seller only)
+   */
+  async updateProduct(productId: string, productData: FormData): Promise<Product> {
+    try {
+      const token = await authService.getToken();
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token || '',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: productData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update product');
+      }
+
+      const data = await response.json();
+      return data.product;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a product (seller only)
+   */
+  async deleteProduct(productId: string): Promise<void> {
+    try {
+      const token = await authService.getToken();
+      const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: defaultHeaders(token || undefined),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
       throw error;
     }
   }

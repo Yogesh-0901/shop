@@ -151,8 +151,9 @@ exports.forgotPassword = async (req, res) => {
         return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    if (newPassword.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters long and contain both letters and numbers" });
     }
 
     try {

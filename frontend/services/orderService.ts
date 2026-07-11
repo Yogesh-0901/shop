@@ -31,7 +31,7 @@ class OrderService {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: defaultHeaders(token),
         body: JSON.stringify({
@@ -39,7 +39,6 @@ class OrderService {
           deliveryAddress,
           paymentMethod,
         }),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -68,7 +67,6 @@ class OrderService {
       const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'GET',
         headers: defaultHeaders(token),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -99,7 +97,6 @@ class OrderService {
       const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
         method: 'GET',
         headers: defaultHeaders(token),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -109,6 +106,57 @@ class OrderService {
       return await response.json();
     } catch (error) {
       console.error('Error fetching order:', error);
+      throw error;
+    }
+  }
+  /**
+   * Get seller's orders
+   */
+  async getSellerOrders(): Promise<Order[]> {
+    try {
+      const token = await authService.getToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_BASE_URL}/api/orders/seller/orders`, {
+        method: 'GET',
+        headers: defaultHeaders(token),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch seller orders');
+      }
+
+      const data = await response.json();
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching seller orders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(orderId: string, status: string): Promise<Order> {
+    try {
+      const token = await authService.getToken();
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: defaultHeaders(token),
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update order status');
+      }
+
+      const data = await response.json();
+      return data.order;
+    } catch (error) {
+      console.error('Error updating order status:', error);
       throw error;
     }
   }

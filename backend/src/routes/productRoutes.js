@@ -40,6 +40,10 @@ const upload = multer({
 // Matches: GET http://192.168.1.38:5000/api/products
 router.get('/', productController.getProducts); 
 
+// GET: Fetch products for the logged-in seller
+// Matches: GET http://192.168.1.38:5000/api/products/seller
+router.get('/seller', auth, productController.getSellerProducts);
+
 // GET: Fetch a single product for the Product Details Page
 // Matches: GET http://192.168.1.38:5000/api/products/:id
 router.get('/:id', productController.getProductById); 
@@ -51,5 +55,13 @@ router.post('/:id/review', productController.addReview);
 // POST: Create a new product with an image (Seller Mode - Protected)
 // Matches: POST http://192.168.1.38:5000/api/products
 router.post('/', auth, upload.single('image'), productController.createProduct);
+
+// PUT: Update an existing product (Seller Mode - Protected)
+// Matches: PUT http://192.168.1.38:5000/api/products/:id
+router.put('/:id', auth, upload.single('image'), productController.updateProduct);
+
+// DELETE: Delete a product (Seller Mode - Protected)
+// Matches: DELETE http://192.168.1.38:5000/api/products/:id
+router.delete('/:id', auth, productController.deleteProduct);
 
 module.exports = router;

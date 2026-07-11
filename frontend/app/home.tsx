@@ -24,7 +24,7 @@ import wishlistService from '../services/wishlistService';
 
 export default function HomePage() {
   const router = useRouter(); 
-  const { category } = useLocalSearchParams(); 
+  const { category, section } = useLocalSearchParams(); 
   const { isLoggedIn, token } = useAuth();
   
   const [products, setProducts] = useState<Product[]>([]); 
@@ -73,15 +73,28 @@ export default function HomePage() {
   }, [isLoggedIn]);
 
   useEffect(() => {
-    if (category) {
-      const filtered = products.filter(item => 
-        item.category && item.category.toLowerCase() === (category as string).toLowerCase()
+    let filtered = [...products];
+
+    if (section) {
+      filtered = filtered.filter(item => 
+        item.section && item.section.toLowerCase() === (section as string).toLowerCase()
       );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts(products);
     }
-  }, [category, products]);
+
+    if (category) {
+      if ((category as string).toLowerCase() === 'new') {
+        // For 'New', just reverse the array to show latest first (assuming latest is at the end)
+        // or sort by date if available.
+        filtered = filtered.reverse();
+      } else {
+        filtered = filtered.filter(item => 
+          item.category && item.category.toLowerCase() === (category as string).toLowerCase()
+        );
+      }
+    }
+
+    setFilteredProducts(filtered);
+  }, [category, section, products]);
 
   const handleSearch = (text: string) => {
     setSearch(text);

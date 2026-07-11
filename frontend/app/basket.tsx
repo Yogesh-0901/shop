@@ -118,15 +118,17 @@ export default function BasketPage() {
         >
           {cartItems.map((item) => (
             <View key={item.productId} style={styles.cartCard}>
-              <View style={styles.itemImageContainer}>
+              <TouchableOpacity style={styles.itemImageContainer} onPress={() => router.push(`/product-details?id=${item.productId}`)}>
                 <Image source={{ uri: item.image }} style={styles.itemImage} />
-              </View>
+              </TouchableOpacity>
               
               <View style={styles.itemDetails}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                  <TouchableOpacity style={{ flex: 1, marginRight: 10 }} onPress={() => router.push(`/product-details?id=${item.productId}`)}>
+                    <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleUpdate(item.productId, 'remove')}>
-                    <Ionicons name="ellipsis-vertical" size={20} color="#999" />
+                    <Ionicons name="trash-outline" size={22} color="#FF3B30" />
                   </TouchableOpacity>
                 </View>
                 

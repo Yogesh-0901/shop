@@ -18,22 +18,22 @@ import { API_BASE_URL } from '../config/api';
 
 const WOMEN_DATA = [
   { id: '1', name: 'New', image: 'https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg' },
-  { id: '2', name: 'Clothes', image: 'https://images.pexels.com/photos/428338/pexels-photo-428338.jpeg' },
-  { id: '3', name: 'Shoes', image: 'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg' },
-  { id: '4', name: 'Accessories', image: 'https://images.pexels.com/photos/1453008/pexels-photo-1453008.jpeg' },
+  { id: '2', name: 'Dresses', image: 'https://images.pexels.com/photos/428338/pexels-photo-428338.jpeg' },
+  { id: '3', name: 'Tops', image: 'https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg' },
+  { id: '4', name: 'Sarees', image: 'https://images.pexels.com/photos/1453008/pexels-photo-1453008.jpeg' },
 ];
 
 const MEN_DATA = [
-  { id: '1', name: 'New Arrival', image: 'https://images.pexels.com/photos/842811/pexels-photo-842811.jpeg' },
-  { id: '2', name: 'Suits', image: 'https://images.pexels.com/photos/1321943/pexels-photo-1321943.jpeg' },
-  { id: '3', name: 'Sneakers', image: 'https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg' },
-  { id: '4', name: 'Watches', image: 'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg' },
+  { id: '1', name: 'New', image: 'https://images.pexels.com/photos/842811/pexels-photo-842811.jpeg' },
+  { id: '2', name: 'Shirts', image: 'https://images.pexels.com/photos/1321943/pexels-photo-1321943.jpeg' },
+  { id: '3', name: 'T-Shirts', image: 'https://images.pexels.com/photos/1456706/pexels-photo-1456706.jpeg' },
+  { id: '4', name: 'Pants', image: 'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg' },
 ];
 
 const KIDS_DATA = [
   { id: '1', name: 'New', image: 'https://images.pexels.com/photos/1619697/pexels-photo-1619697.jpeg' },
   { id: '2', name: 'T-Shirts', image: 'https://images.pexels.com/photos/1148957/pexels-photo-1148957.jpeg' },
-  { id: '3', name: 'Toys', image: 'https://images.pexels.com/photos/168866/pexels-photo-168866.jpeg' },
+  { id: '3', name: 'Shorts', image: 'https://images.pexels.com/photos/168866/pexels-photo-168866.jpeg' },
 ];
 
 export default function CategoriesPage() {
@@ -83,7 +83,7 @@ export default function CategoriesPage() {
           <Ionicons name="chevron-back-outline" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Categories</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/home')}>
           <Ionicons name="search-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   activeTabText: { color: '#000', fontWeight: 'bold' },
   promoBanner: { backgroundColor: '#05103A', marginHorizontal: 20, marginTop: 10, marginBottom: 20, borderRadius: 10, padding: 30, alignItems: 'center', elevation: 3 },
   promoTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  promoSub: { color: '#fff', fontSize: 14, marginTop: 5, color: '#ccc' },
+  promoSub: { fontSize: 14, marginTop: 5, color: '#ccc' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 20, marginBottom: 10, marginTop: 10 },
   verticalList: { paddingHorizontal: 20, paddingBottom: 20 },
   categoryBlockCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 10, height: 90, marginBottom: 15, alignItems: 'center', overflow: 'hidden' },

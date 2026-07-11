@@ -7,6 +7,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   role: 'customer' | 'seller' | 'admin';
+  phone?: string;
 }
 
 export interface LoginResponse {
@@ -97,7 +98,6 @@ class AuthService {
         method: 'POST',
         headers: defaultHeaders(),
         body: JSON.stringify({ fullName, email, password }),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -127,7 +127,6 @@ class AuthService {
         method: 'POST',
         headers: defaultHeaders(),
         body: JSON.stringify({ email, password }),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {
@@ -159,7 +158,6 @@ class AuthService {
       const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'GET',
         headers: defaultHeaders(token),
-        timeout: API_TIMEOUT,
       });
 
       return response.ok;
@@ -178,7 +176,6 @@ class AuthService {
         method: 'POST',
         headers: defaultHeaders(),
         body: JSON.stringify({ email, newPassword, confirmPassword }),
-        timeout: API_TIMEOUT,
       });
 
       if (!response.ok) {

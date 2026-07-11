@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  loginLink: { alignItems: 'center' },
+  loginLink: { alignItems: 'center', marginTop: 15 },
   loginText: { fontSize: 15, color: '#333' },
-  loginBold: { fontWeight: 'bold', color: '#05103A' }
+  loginBold: { fontWeight: 'bold', color: '#000' }
 });

@@ -188,5 +188,5 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   signupLink: { alignItems: 'center' },
   signupText: { fontSize: 15, color: '#333' },
-  signupBold: { fontWeight: 'bold', color: '#05103A' }
+  signupBold: { fontWeight: 'bold', color: '#000' }
 });

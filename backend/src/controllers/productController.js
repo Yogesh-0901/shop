@@ -69,8 +69,8 @@ exports.addReview = async (req, res) => {
             return res.status(400).json({ error: "Stars must be between 1 and 5" });
         }
 
-        if (comment.length < 5 || comment.length > 500) {
-            return res.status(400).json({ error: "Comment must be between 5 and 500 characters" });
+        if (comment.length < 1 || comment.length > 500) {
+            return res.status(400).json({ error: "Comment must be between 1 and 500 characters" });
         }
 
         const product = await Product.findById(productId);
@@ -81,12 +81,16 @@ exports.addReview = async (req, res) => {
 
         // Create the new review object
         const newReview = {
-            user: user.substring(0, 50), // Limit user name
+            user: String(user).substring(0, 50), // Limit user name
             stars: Number(stars),
-            comment: comment.substring(0, 500), // Limit comment
-            userImage: userImage || null,
+            comment: String(comment).substring(0, 500), // Limit comment
+            userImage: userImage ? String(userImage) : null,
             createdAt: new Date()
         };
+
+        if (!product.reviews) {
+            product.reviews = [];
+        }
 
         // Push review to the product's review array
         product.reviews.push(newReview); 
@@ -149,6 +153,7 @@ exports.createProduct = async (req, res) => {
 
         const newProduct = new Product({
             name: name.trim(),
+            seller: req.user.userId,
             description: description.trim(),
             price: priceNum,
             category: (category || 'General').trim(),
@@ -163,5 +168,76 @@ exports.createProduct = async (req, res) => {
     } catch (error) {
         console.error('Create product error:', error);
         res.status(500).json({ error: "Product creation failed: " + error.message });
+    }
+};
+
+// 5. Get Products for the Logged-in Seller
+exports.getSellerProducts = async (req, res) => {
+    try {
+        const products = await Product.find({ seller: req.user.userId }).sort({ createdAt: -1 });
+        res.status(200).json(products);
+    } catch (error) {
+        console.error('Get seller products error:', error);
+        res.status(500).json({ error: "Failed to fetch seller products" });
+    }
+};
+
+// 6. Update a Product (Seller only)
+exports.updateProduct = async (req, res) => {
+    try {
+        const { name, price, description, category, section, stock, image } = req.body;
+        const productId = req.params.id;
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        // Check if the user owns this product
+        if (product.seller.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Unauthorized. You do not own this product." });
+        }
+
+        const priceNum = Number(price);
+        if (price !== undefined && (isNaN(priceNum) || priceNum <= 0)) {
+            return res.status(400).json({ error: "Price must be a positive number" });
+        }
+
+        if (name) product.name = name.trim();
+        if (price) product.price = priceNum;
+        if (description) product.description = description.trim();
+        if (category) product.category = category.trim();
+        if (section) product.section = section;
+        if (stock !== undefined) product.stock = Number(stock);
+        if (image) product.image = image;
+        if (req.file) product.image = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+        await product.save();
+        res.status(200).json({ message: "Product updated successfully", product });
+    } catch (error) {
+        console.error('Update product error:', error);
+        res.status(500).json({ error: "Failed to update product" });
+    }
+};
+
+// 7. Delete a Product (Seller only)
+exports.deleteProduct = async (req, res) => {
+    try {
+        const productId = req.params.id;
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({ error: "Product not found" });
+        }
+
+        if (product.seller.toString() !== req.user.userId) {
+            return res.status(403).json({ error: "Unauthorized. You do not own this product." });
+        }
+
+        await Product.findByIdAndDelete(productId);
+        res.status(200).json({ message: "Product deleted successfully" });
+    } catch (error) {
+        console.error('Delete product error:', error);
+        res.status(500).json({ error: "Failed to delete product" });
     }
 };

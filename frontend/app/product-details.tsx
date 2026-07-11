@@ -18,6 +18,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_BASE_URL } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
 import cartService from '../services/cartService';
+import productService from '../services/productService';
 
 const { width } = Dimensions.get('window');
 
@@ -92,42 +93,37 @@ export default function ProductDetails() {
   };
 
   const submitReview = async () => {
+    const productIdStr = Array.isArray(id) ? id[0] : id;
+    console.log("Submitting review for:", productIdStr, "Rating:", rating, "Text:", reviewText);
+
     if (!rating || !reviewText.trim()) {
       Alert.alert('Error', 'Please give rating and write a review');
       return;
     }
 
+    if (!productIdStr) {
+      Alert.alert('Error', 'Product ID is missing');
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products/${id}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user: user?.fullName || 'User', 
-          stars: rating,
-          comment: reviewText,
-          userImage: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
-        }),
-      });
+      const reviewPayload = {
+        user: user?.fullName || 'User',
+        stars: rating,
+        comment: reviewText.trim(),
+        userImage: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
+      };
 
-      const text = await response.text();
+      const result = await productService.addReview(productIdStr, reviewPayload);
 
-      if (text.startsWith('<html')) {
-        Alert.alert("Error", "Server route not found.");
-        return;
-      }
-
-      const result = JSON.parse(text);
-      if (response.ok) {
-        setReviews(result.reviews || []); 
-        setRating(0);
-        setReviewText('');
-        setModalVisible(false);
-        Alert.alert("Success", "Review posted!");
-      } else {
-        Alert.alert("Error", result.error || "Could not save review");
-      }
-    } catch (error) {
-      Alert.alert("Error", "Server connection failed.");
+      setReviews(result.reviews || []); 
+      setRating(5); 
+      setReviewText('');
+      setModalVisible(false);
+      Alert.alert("Success", "Review posted!");
+    } catch (error: any) {
+      console.error("Submit review error:", error);
+      Alert.alert("Error", "Server connection failed: " + error.message);
     }
   };
 

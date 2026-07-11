@@ -13,6 +13,25 @@ exports.getCart = async (req, res) => {
 
         const cart = await Cart.findOne({ userId });
         
+        if (cart && cart.items.length > 0) {
+            const validItems = [];
+            let cartModified = false;
+            
+            for (const item of cart.items) {
+                const product = await Product.findById(item.productId);
+                if (product) {
+                    validItems.push(item);
+                } else {
+                    cartModified = true;
+                }
+            }
+            
+            if (cartModified) {
+                cart.items = validItems;
+                await cart.save();
+            }
+        }
+        
         // Return the items array or an empty array if no cart exists
         res.status(200).json(cart ? cart.items : []);
     } catch (error) {

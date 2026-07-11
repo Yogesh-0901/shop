@@ -24,7 +24,7 @@ const OrderSchema = new mongoose.Schema({
     deliveryCarrier: {
         type: String,
         default: 'Standard',
-        enum: ['Standard', 'Express', 'Overnight', 'Pickup']
+        enum: ['Standard', 'Express', 'Overnight', 'Pickup', 'fedex', 'usps', 'dhl']
     },
     deliveryAddress: {
         type: String,

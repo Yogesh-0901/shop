@@ -12,6 +12,7 @@ const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -32,7 +33,7 @@ app.use(cors(corsOptions));
 
 // 1. IMPROVED: Dynamic Static Folder Path
 // This ensures the /uploads folder is accessible for your Product Images
-const uploadDir = path.join(__dirname, 'uploads'); 
+const uploadDir = path.join(__dirname, '..', 'uploads'); 
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
@@ -45,6 +46,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes); 
 app.use('/api/orders', orderRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
