@@ -23,8 +23,10 @@ exports.signup = async (req, res) => {
         return res.status(400).json({ error: "Email and password are required" });
     }
     
-    if (password.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
+    // Validate password: minimum 8 characters, at least one letter and one number
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.status(400).json({ error: "Password must be at least 8 characters long and contain both letters and numbers" });
     }
 
     try {

@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SuccessPage() {
   const router = useRouter();
@@ -10,27 +11,26 @@ export default function SuccessPage() {
       <StatusBar barStyle="dark-content" />
       
       <View style={styles.content}>
-        {/* Success Illustration Section */}
-        <View style={styles.imageContainer}>
-           <View style={styles.bagGroup}>
-              {/* You can replace these Views with your local Image assets */}
-              <View style={[styles.bag, styles.bagYellow]} />
-              <View style={[styles.bag, styles.bagRed]} />
-           </View>
-           {/* Decorative dots to match your confetti design */}
-           <View style={[styles.dot, {top: '10%', left: '25%', backgroundColor: '#FF5722'}]} />
-           <View style={[styles.dot, {top: '30%', right: '20%', backgroundColor: '#2196F3'}]} />
-           <View style={[styles.dot, {bottom: '20%', left: '15%', backgroundColor: '#4CAF50'}]} />
+        
+        <View style={styles.cardsContainer}>
+          <View style={[styles.card, styles.yellowCard]}>
+            <Ionicons name="bag-handle" size={70} color="#fff" />
+          </View>
+          <View style={[styles.card, styles.redCard]}>
+            <Ionicons name="bag-handle" size={70} color="#fff" />
+          </View>
+          
+          <View style={[styles.dot, styles.dotOrange]} />
+          <View style={[styles.dot, styles.dotBlue]} />
+          <View style={[styles.dot, styles.dotGreen]} />
         </View>
 
-        {/* Text Section */}
         <Text style={styles.successTitle}>SUCCESS!</Text>
         <Text style={styles.successMessage}>
           Your order will be delivered soon.{"\n"}
           Thank you for choosing our app.
         </Text>
 
-        {/* Full-width Button Section */}
         <View style={styles.buttonWrapper}>
           <TouchableOpacity 
             style={styles.continueBtn} 
@@ -47,82 +47,79 @@ export default function SuccessPage() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#D2B2AE' // This background color will now fill the entire browser
+    backgroundColor: '#D8B4A0' 
   },
   content: { 
     flex: 1, 
     alignItems: 'center', 
     justifyContent: 'center',
-    width: '100%', // Ensures content spans the whole width
-    paddingHorizontal: '5%' // Small breathing room on sides
+    width: '100%', 
+    paddingHorizontal: 30
   },
-  imageContainer: {
-    width: '100%',
-    height: 300,
+  cardsContainer: {
+    height: 160,
+    width: 160,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 40,
     position: 'relative',
+    marginTop: -40
   },
-  bagGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  bag: {
-    width: 80,
-    height: 100,
-    borderRadius: 10,
-  },
-  bagYellow: {
-    backgroundColor: '#FFC107',
-    transform: [{ rotate: '-15deg' }],
-    marginRight: -20,
-  },
-  bagRed: {
-    backgroundColor: '#D32F2F',
-    height: 120,
+  card: {
     width: 90,
-    transform: [{ rotate: '10deg' }],
+    height: 120,
+    borderRadius: 20,
+    position: 'absolute',
+    elevation: 3,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  yellowCard: {
+    backgroundColor: '#FACC15', 
+    transform: [{ rotate: '-12deg' }, { translateX: -20 }, { translateY: 5 }],
+    zIndex: 1
+  },
+  redCard: {
+    backgroundColor: '#DC2626',
+    transform: [{ rotate: '8deg' }, { translateX: 20 }],
+    zIndex: 2
   },
   dot: {
     position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    borderRadius: 50
   },
+  dotOrange: { width: 12, height: 12, backgroundColor: '#FF5722', top: -30, left: 10 },
+  dotBlue: { width: 10, height: 10, backgroundColor: '#2196F3', top: 10, right: -10 },
+  dotGreen: { width: 10, height: 10, backgroundColor: '#4CAF50', bottom: -10, left: -10 },
   successTitle: { 
-    fontSize: 36, 
-    fontWeight: 'bold', 
+    fontSize: 32, 
+    fontWeight: '900', 
     color: '#000', 
-    marginVertical: 20,
-    letterSpacing: 2
+    marginVertical: 10,
+    letterSpacing: 1
   },
   successMessage: { 
-    fontSize: 18, 
+    fontSize: 16, 
     textAlign: 'center', 
-    color: '#333', 
-    lineHeight: 28,
+    color: '#444', 
+    lineHeight: 26,
     marginBottom: 60 
   },
   buttonWrapper: {
     width: '100%',
-    maxWidth: 600, // Keeps the button from looking too stretched on massive screens
   },
   continueBtn: { 
-    backgroundColor: '#000C33', 
+    backgroundColor: '#05103A', 
     width: '100%', 
-    height: 65, 
-    borderRadius: 35, 
+    height: 60, 
+    borderRadius: 30, 
     justifyContent: 'center', 
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5
+    elevation: 2
   },
   continueText: { 
     color: '#fff', 
     fontSize: 16, 
-    fontWeight: 'bold',
-    letterSpacing: 1
+    fontWeight: 'bold'
   }
 });

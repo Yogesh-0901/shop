@@ -16,7 +16,6 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/api';
 
-// --- STATIC SUB-CATEGORIES DATA ---
 const WOMEN_DATA = [
   { id: '1', name: 'New', image: 'https://images.pexels.com/photos/1036622/pexels-photo-1036622.jpeg' },
   { id: '2', name: 'Clothes', image: 'https://images.pexels.com/photos/428338/pexels-photo-428338.jpeg' },
@@ -56,7 +55,6 @@ export default function CategoriesPage() {
       const text = await response.text();
 
       if (text.startsWith('<html') || text.startsWith('<!DOCTYPE')) {
-        console.error("Categories Error: Server returned HTML. Check backend routes.");
         setProducts([]);
         return;
       }
@@ -66,7 +64,6 @@ export default function CategoriesPage() {
         setProducts(data.filter((p: any) => p.section === section));
       }
     } catch (error) {
-      console.error("Fetch error:", error);
       Alert.alert("Connection Error", "Could not reach the backend server.");
     } finally {
       setLoading(false);
@@ -81,30 +78,31 @@ export default function CategoriesPage() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#000" />
+          <Ionicons name="chevron-back-outline" size={28} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Categories</Text>
         <TouchableOpacity>
-          <Ionicons name="search" size={24} color="#000" />
+          <Ionicons name="search-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
 
-      {/* Top Tabs */}
       <View style={styles.tabs}>
-        {['women', 'men', 'kids'].map((tab) => (
-          <TouchableOpacity 
-            key={tab} 
-            onPress={() => setActiveTab(tab)}
-            style={[styles.tab, activeTab === tab && styles.activeTab]}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {['women', 'Men', 'Kids'].map((tab) => {
+          const tabKey = tab.toLowerCase();
+          return (
+            <TouchableOpacity 
+              key={tabKey} 
+              onPress={() => setActiveTab(tabKey)}
+              style={[styles.tab, activeTab === tabKey && styles.activeTab]}
+            >
+              <Text style={[styles.tabText, activeTab === tabKey && styles.activeTabText]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -113,28 +111,25 @@ export default function CategoriesPage() {
           <Text style={styles.promoSub}>upto 50% off</Text>
         </View>
 
-        {/* 1. Updated Sub-Categories with Section + Category Navigation */}
-        <Text style={styles.sectionTitle}>Discover {activeTab}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+        <View style={styles.verticalList}>
           {getSubCategories().map((item) => (
             <TouchableOpacity 
               key={item.id} 
-              style={styles.subCatCard}
+              style={styles.categoryBlockCard}
               onPress={() => router.push({ 
                 pathname: '/home', 
                 params: { category: item.name, section: activeTab } 
               } as any)}
             >
-              <Image source={{ uri: item.image }} style={styles.subCatImage} />
-              <Text style={styles.subCatName}>{item.name}</Text>
+              <Text style={styles.categoryBlockName}>{item.name}</Text>
+              <Image source={{ uri: item.image }} style={styles.categoryBlockImage} />
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
-        {/* 2. Trending Products List */}
         <Text style={styles.sectionTitle}>Trending Now</Text>
         {loading ? (
-          <ActivityIndicator size="large" color="#000C33" style={styles.loader} />
+          <ActivityIndicator size="large" color="#05103A" style={styles.loader} />
         ) : products.length === 0 ? (
           <Text style={styles.emptyText}>No products found for this section.</Text>
         ) : (
@@ -155,41 +150,64 @@ export default function CategoriesPage() {
         <View style={{ height: 120 }} /> 
       </ScrollView>
 
-      {/* Navigation Bar */}
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home' as any)}><Ionicons name="home" size={26} color="#002DFF" /></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories' as any)}><Ionicons name="list" size={26} color="#002DFF" /></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket' as any)}><Ionicons name="basket" size={26} color="#002DFF" /></TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile' as any)}><Ionicons name="person" size={26} color="#002DFF" /></TouchableOpacity>
+      <View style={styles.navBarContainer}>
+        <View style={styles.navBar}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+            <Ionicons name="home-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
+            <Ionicons name="list" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket')}>
+            <Ionicons name="basket-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
+            <Ionicons name="person-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#D2B2AE' },
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15 },
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', justifyContent: 'space-around', paddingVertical: 10 },
-  tab: { paddingVertical: 10, paddingHorizontal: 20 },
-  activeTab: { borderBottomWidth: 3, borderBottomColor: '#FF6262' },
-  tabText: { fontSize: 18, color: '#888' },
+  tabs: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10, paddingHorizontal: 20, backgroundColor: '#D8B4A0' },
+  tab: { paddingVertical: 10, paddingHorizontal: 15, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  activeTab: { borderBottomColor: '#FF6262' },
+  tabText: { fontSize: 16, color: '#666', fontWeight: '500' },
   activeTabText: { color: '#000', fontWeight: 'bold' },
-  promoBanner: { backgroundColor: '#000C33', margin: 20, borderRadius: 12, padding: 30, alignItems: 'center' },
-  promoTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  promoSub: { color: '#fff', fontSize: 16 },
+  promoBanner: { backgroundColor: '#05103A', marginHorizontal: 20, marginTop: 10, marginBottom: 20, borderRadius: 10, padding: 30, alignItems: 'center', elevation: 3 },
+  promoTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  promoSub: { color: '#fff', fontSize: 14, marginTop: 5, color: '#ccc' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 20, marginBottom: 10, marginTop: 10 },
-  horizontalScroll: { paddingLeft: 20, paddingBottom: 20 },
-  subCatCard: { marginRight: 15, alignItems: 'center' },
-  subCatImage: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#fff' },
-  subCatName: { marginTop: 8, fontSize: 14, fontWeight: '600' },
-  categoryCard: { backgroundColor: '#fff', height: 100, borderRadius: 12, marginHorizontal: 20, marginBottom: 15, flexDirection: 'row', overflow: 'hidden' },
+  verticalList: { paddingHorizontal: 20, paddingBottom: 20 },
+  categoryBlockCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 10, height: 90, marginBottom: 15, alignItems: 'center', overflow: 'hidden' },
+  categoryBlockName: { flex: 1, paddingLeft: 20, fontSize: 18, fontWeight: '600', color: '#000' },
+  categoryBlockImage: { width: 130, height: '100%', resizeMode: 'cover', borderTopLeftRadius: 30, borderBottomLeftRadius: 30 },
+  categoryCard: { backgroundColor: '#fff', height: 100, borderRadius: 12, marginHorizontal: 20, marginBottom: 15, flexDirection: 'row', overflow: 'hidden', elevation: 2 },
   cardLabel: { flex: 1, justifyContent: 'center', paddingLeft: 20 },
   categoryName: { fontSize: 18, fontWeight: 'bold' },
-  categoryPrice: { fontSize: 14, color: '#002DFF', marginTop: 4 },
+  categoryPrice: { fontSize: 14, color: '#000', marginTop: 4, fontWeight: '600' },
   categoryImage: { width: 120, height: '100%', resizeMode: 'cover' },
   loader: { marginTop: 20 },
   emptyText: { textAlign: 'center', marginTop: 20, color: '#666' },
-  navBar: { position: 'absolute', bottom: 25, left: 15, right: 15, height: 70, backgroundColor: '#fff', borderRadius: 40, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 5 } },
+  navBarContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
+  navBar: { 
+    backgroundColor: '#fff', 
+    borderRadius: 40, 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center', 
+    height: 70,
+    elevation: 5,
+  },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' }
 });

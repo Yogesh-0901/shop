@@ -15,36 +15,26 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
-import cartService from '../services/cartService';
-import { Product } from '../services/productService';
-
-interface CartItem extends Product {
-  quantity: number;
-}
+import cartService, { CartItem } from '../services/cartService';
 
 export default function BasketPage() {
   const router = useRouter();
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch cart items
   const fetchCart = async () => {
     try {
       setLoading(true);
       if (!isLoggedIn) {
-        Alert.alert("Please Log In", "You need to log in to view your cart.");
-        router.push('/index');
         return;
       }
 
       const items = await cartService.getCart();
       setCartItems(Array.isArray(items) ? items : []);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to load cart';
-      Alert.alert("Error", errorMsg);
       console.error('Fetch cart error:', error);
     } finally {
       setLoading(false);
@@ -60,20 +50,19 @@ export default function BasketPage() {
   );
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (!isLoading && !isLoggedIn) {
+      router.replace('/');
+    } else if (isLoggedIn) {
       fetchCart();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isLoading]);
 
-  // Update cart item quantity
   const handleUpdate = async (productId: string, action: 'plus' | 'minus' | 'remove') => {
     try {
       await cartService.updateCart(productId, action);
-      await fetchCart(); // Refresh cart after update
-      Alert.alert("Success", "Cart updated");
+      await fetchCart();
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to update cart';
-      Alert.alert("Error", errorMsg);
+      Alert.alert("Error", "Failed to update cart");
     }
   };
 
@@ -85,19 +74,12 @@ export default function BasketPage() {
 
   const totalAmount = cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
 
-  if (!isLoggedIn) {
+  if (isLoading || !isLoggedIn) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" />
-        <View style={styles.emptyContainer}>
-          <Ionicons name="lock-closed-outline" size={80} color="#999" />
-          <Text style={styles.emptyText}>Please log in to view your cart</Text>
-          <TouchableOpacity 
-            style={styles.shopBtn} 
-            onPress={() => router.push('/index')}
-          >
-            <Text style={styles.shopBtnText}>LOGIN</Text>
-          </TouchableOpacity>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color="#05103A" />
         </View>
       </SafeAreaView>
     );
@@ -108,7 +90,7 @@ export default function BasketPage() {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" />
         <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color="#002DFF" />
+          <ActivityIndicator size="large" color="#05103A" />
         </View>
       </SafeAreaView>
     );
@@ -117,14 +99,14 @@ export default function BasketPage() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      
+        <Text style={styles.mainTitle}>My Bag</Text>
+
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="cart-outline" size={100} color="#999" />
+          <Ionicons name="cart-outline" size={100} color="#666" />
           <Text style={styles.emptyText}>Your cart is empty</Text>
-          <TouchableOpacity 
-            style={styles.shopBtn} 
-            onPress={() => router.push('/home')}
-          >
+          <TouchableOpacity style={styles.shopBtn} onPress={() => router.push('/home')}>
             <Text style={styles.shopBtnText}>SHOP NOW</Text>
           </TouchableOpacity>
         </View>
@@ -132,144 +114,123 @@ export default function BasketPage() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         >
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitleText}>Basket</Text>
-          </View>
-          
-          <Text style={styles.mainTitle}>My Cart</Text>
-          
           {cartItems.map((item) => (
-            <View key={item._id} style={styles.cartCard}>
-              <Image 
-                source={{ uri: item.image }} 
-                style={styles.itemImage}
-                onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-              />
+            <View key={item.productId} style={styles.cartCard}>
+              <View style={styles.itemImageContainer}>
+                <Image source={{ uri: item.image }} style={styles.itemImage} />
+              </View>
+              
               <View style={styles.itemDetails}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
-                  <TouchableOpacity onPress={() => handleUpdate(item._id, 'remove')}>
-                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                  <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+                  <TouchableOpacity onPress={() => handleUpdate(item.productId, 'remove')}>
+                    <Ionicons name="ellipsis-vertical" size={20} color="#999" />
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.itemPrice}>${(item.price || 0).toFixed(2)}</Text>
-                <View style={styles.quantityRow}>
+                
+                <Text style={styles.itemSubDetail}>Color: Black  Size: M</Text>
+                
+                <View style={styles.bottomRow}>
                   <View style={styles.counter}>
-                    <TouchableOpacity 
-                      onPress={() => handleUpdate(item._id, 'minus')} 
-                      style={styles.qtyBtn}
-                    >
-                      <Ionicons name="remove" size={18} color="#888" />
+                    <TouchableOpacity onPress={() => handleUpdate(item.productId, 'minus')} style={styles.qtyBtn}>
+                      <Ionicons name="remove" size={18} color="#000" />
                     </TouchableOpacity>
                     <Text style={styles.qtyText}>{item.quantity || 1}</Text>
-                    <TouchableOpacity 
-                      onPress={() => handleUpdate(item._id, 'plus')} 
-                      style={styles.qtyBtn}
-                    >
-                      <Ionicons name="add" size={18} color="#888" />
+                    <TouchableOpacity onPress={() => handleUpdate(item.productId, 'plus')} style={styles.qtyBtn}>
+                      <Ionicons name="add" size={18} color="#000" />
                     </TouchableOpacity>
                   </View>
-                  <Text style={styles.itemTotal}>${((item.price || 0) * (item.quantity || 1)).toFixed(2)}</Text>
+                  <Text style={styles.itemPrice}>{((item.price || 0) * (item.quantity || 1)).toFixed(0)}$</Text>
                 </View>
               </View>
             </View>
           ))}
           
           <View style={styles.summarySection}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal:</Text>
-              <Text style={styles.summaryValue}>${totalAmount.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping:</Text>
-              <Text style={styles.summaryValue}>Free</Text>
-            </View>
-            <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#EEE', paddingTop: 12, marginTop: 12 }]}>
-              <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalValue}>${totalAmount.toFixed(2)}</Text>
-            </View>
+            <Text style={styles.summaryLabel}>Total amount:</Text>
+            <Text style={styles.summaryValue}>{totalAmount.toFixed(0)}$</Text>
           </View>
           
-          <TouchableOpacity 
-            style={styles.checkoutBtn} 
-            onPress={() => router.push('/checkout')}
-          >
-            <Text style={styles.checkoutText}>PROCEED TO CHECKOUT</Text>
+          <TouchableOpacity style={styles.checkoutBtn} onPress={() => router.push('/checkout')}>
+            <Text style={styles.checkoutText}>CHECK OUT</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
       
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
-          <Ionicons name="home" size={28} color="#777" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
-          <Ionicons name="list" size={28} color="#777" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket')}>
-          <Ionicons name="basket" size={28} color="#002DFF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={28} color="#777" />
-        </TouchableOpacity>
+      <View style={styles.navBarContainer}>
+        <View style={styles.navBar}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+            <Ionicons name="home-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
+            <Ionicons name="list-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket')}>
+            <Ionicons name="basket" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
+            <Ionicons name="person-outline" size={26} color="#002DFF" />
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20, paddingHorizontal: 20 },
+  mainTitle: { fontSize: 32, fontWeight: 'bold', color: '#000', marginTop: 20, marginLeft: 20, marginBottom: 20 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 160 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15 },
-  headerTitleText: { fontSize: 18, marginLeft: 20, fontWeight: '500', color: '#000' },
-  mainTitle: { fontSize: 32, fontWeight: 'bold', marginBottom: 25, color: '#000' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
-  emptyText: { fontSize: 18, color: '#999', marginTop: 20, fontWeight: '600' },
-  shopBtn: { backgroundColor: '#002DFF', paddingHorizontal: 30, paddingVertical: 15, borderRadius: 25, marginTop: 25 },
+  emptyText: { fontSize: 18, color: '#333', marginTop: 20, fontWeight: '600' },
+  shopBtn: { backgroundColor: '#05103A', paddingHorizontal: 30, paddingVertical: 15, borderRadius: 25, marginTop: 25 },
   shopBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   cartCard: { 
     flexDirection: 'row', 
     backgroundColor: '#fff', 
-    borderRadius: 12, 
-    height: 130, 
+    borderRadius: 15, 
+    padding: 12,
     marginBottom: 15, 
-    overflow: 'hidden', 
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F0F0F0'
+    elevation: 2
   },
-  itemImage: { width: 120, height: '100%', resizeMode: 'cover' },
-  itemDetails: { flex: 1, padding: 12, justifyContent: 'space-between' },
+  itemImageContainer: { width: 90, height: 90, borderRadius: 10, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  itemImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  itemDetails: { flex: 1, marginLeft: 15, justifyContent: 'space-between' },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  itemName: { fontSize: 15, fontWeight: 'bold', color: '#000', flex: 1, marginRight: 10 },
-  itemPrice: { fontSize: 14, color: '#002DFF', fontWeight: '600', marginVertical: 4 },
-  quantityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  counter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 20, paddingHorizontal: 8 },
-  qtyBtn: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  qtyText: { marginHorizontal: 10, fontWeight: '600', color: '#000' },
-  itemTotal: { fontWeight: 'bold', fontSize: 15, color: '#002DFF' },
-  summarySection: { 
+  itemName: { fontSize: 16, fontWeight: 'bold', color: '#000', flex: 1, marginRight: 10 },
+  itemSubDetail: { fontSize: 12, color: '#666', marginTop: 2 },
+  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  counter: { flexDirection: 'row', alignItems: 'center' },
+  qtyBtn: { 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginVertical: 25,
-    borderWidth: 1,
-    borderColor: '#F0F0F0'
+    alignItems: 'center', 
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2
   },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  summaryLabel: { fontSize: 14, color: '#666' },
-  summaryValue: { fontSize: 14, fontWeight: '600', color: '#000' },
-  totalLabel: { fontSize: 16, color: '#000', fontWeight: '600' },
-  totalValue: { fontSize: 20, fontWeight: 'bold', color: '#002DFF' },
+  qtyText: { marginHorizontal: 12, fontWeight: '600', color: '#000', fontSize: 14 },
+  itemPrice: { fontWeight: 'bold', fontSize: 16, color: '#000' },
+  summarySection: { 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 20,
+    marginTop: 30,
+    paddingHorizontal: 5
+  },
+  summaryLabel: { fontSize: 16, color: '#666', fontWeight: '500' },
+  summaryValue: { fontSize: 24, fontWeight: 'bold', color: '#000' },
   checkoutBtn: { 
-    backgroundColor: '#002DFF', 
+    backgroundColor: '#1E2034', 
     height: 60, 
     borderRadius: 30, 
     justifyContent: 'center', 
@@ -278,22 +239,24 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   checkoutText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  navBarContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
   navBar: { 
-    position: 'absolute', 
-    bottom: 20, 
-    left: 20, 
-    right: 20, 
-    height: 75, 
     backgroundColor: '#fff', 
     borderRadius: 40, 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
     alignItems: 'center', 
-    elevation: 10,
+    height: 70,
+    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' }
 });

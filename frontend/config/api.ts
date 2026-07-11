@@ -1,6 +1,6 @@
 // API Configuration
 // Update this URL based on your environment
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.35:5000';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
 
 // API Timeout in milliseconds
 export const API_TIMEOUT = 30000;

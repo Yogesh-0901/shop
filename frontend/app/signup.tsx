@@ -9,7 +9,9 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,13 +28,11 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   };
 
-  // Handle Signup
   const handleSignup = async (): Promise<void> => {
     if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert("Missing Fields", "Please fill in all fields");
@@ -44,8 +44,9 @@ export default function Signup() {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert("Weak Password", "Password must be at least 6 characters long.");
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      Alert.alert("Weak Password", "Password must be at least 8 characters long and contain both letters and numbers.");
       return;
     }
 
@@ -56,17 +57,11 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      // Call authService to signup
-      const response = await authService.signup(fullName, email, password);
-      
-      if (response.token) {
-        // Update auth context with new user
-        await signup(fullName, email, password);
-        Alert.alert("Success", "Account created! Logging you in...");
-        router.replace('/home' as any);
-      } else {
-        Alert.alert("Error", response.message || "Signup failed");
-      }
+      await authService.signup(fullName, email, password);
+      // Immediately logout to clear the stored token so they must login manually per requirement
+      await authService.logout();
+      Alert.alert("Success", "Account created successfully. Please log in.");
+      router.replace('/');
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Signup failed";
       Alert.alert("Error", errorMsg);
@@ -75,144 +70,102 @@ export default function Signup() {
     }
   };
 
-  // Google Signup Logic (UI Only for now)
-  const handleGoogleSignup = () => {
-    Alert.alert(
-      "Coming Soon", 
-      "Google authentication will be available soon.",
-      [{ text: "OK" }]
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.inner}>
-          
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={28} color="#000" />
-          </TouchableOpacity>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.inner}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={28} color="#000" />
+            </TouchableOpacity>
 
-          <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.title}>Sign Up</Text>
 
-          <View style={styles.inputGroup}>
-            <View style={styles.inputBox}>
+            <View style={styles.formContainer}>
               <TextInput 
                 style={styles.input} 
                 placeholder="Full Name" 
-                placeholderTextColor="#999"
+                placeholderTextColor="#666"
                 value={fullName}
                 onChangeText={setFullName}
+                editable={!loading}
               />
-            </View>
 
-            <View style={styles.inputBox}>
               <TextInput 
                 style={styles.input} 
                 placeholder="Email Address" 
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholderTextColor="#999"
+                placeholderTextColor="#666"
                 value={email}
                 onChangeText={setEmail}
+                editable={!loading}
               />
-            </View>
 
-            <View style={styles.inputBox}>
               <TextInput 
                 style={styles.input} 
-                placeholder="Password (min 6 characters)" 
+                placeholder="Password" 
                 secureTextEntry={true} 
-                placeholderTextColor="#999"
+                placeholderTextColor="#666"
                 value={password}
                 onChangeText={setPassword}
+                editable={!loading}
               />
-            </View>
 
-            <View style={styles.inputBox}>
               <TextInput 
                 style={styles.input} 
                 placeholder="Confirm Password" 
                 secureTextEntry={true} 
-                placeholderTextColor="#999"
+                placeholderTextColor="#666"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                editable={!loading}
               />
+
+              <TouchableOpacity style={styles.signupBtn} onPress={handleSignup} disabled={loading}>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>SIGN UP</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => router.push('/' as any)} style={styles.loginLink} disabled={loading}>
+                <Text style={styles.loginText}>
+                  Already have an account? <Text style={styles.loginBold}>Login</Text>
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          <TouchableOpacity style={styles.signupBtn} onPress={handleSignup} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>SIGN UP</Text>}
-          </TouchableOpacity>
-
-          {/* GOOGLE OPTION */}
-          <View style={styles.dividerRow}>
-            <View style={styles.line} />
-            <Text style={styles.orText}>OR</Text>
-            <View style={styles.line} />
-          </View>
-
-          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleSignup}>
-            <Ionicons name="logo-google" size={22} color="#EA4335" />
-            <Text style={styles.googleBtnText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push('/index' as any)} style={styles.loginLink}>
-            <Text style={styles.loginText}>
-              Already have an account? <Text style={styles.loginBold}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-          
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
   scrollContainer: { flexGrow: 1, justifyContent: 'center' },
-  inner: { paddingHorizontal: 35, paddingVertical: 40 },
+  inner: { paddingHorizontal: 30, paddingVertical: 40 },
   backButton: { marginBottom: 20 },
-  title: { fontSize: 36, fontWeight: 'bold', marginBottom: 30, color: '#000' },
-  inputGroup: { width: '100%' },
-  inputBox: { 
+  title: { fontSize: 36, fontWeight: 'bold', color: '#000', marginBottom: 40 },
+  formContainer: { width: '100%' },
+  input: { 
     backgroundColor: '#fff', 
-    borderRadius: 12, 
-    paddingHorizontal: 15,
+    borderRadius: 10, 
+    paddingHorizontal: 20,
     paddingVertical: 18, 
-    marginBottom: 15,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#E0E0E0'
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#000'
   },
-  input: { fontSize: 16, color: '#000' },
   signupBtn: { 
-    backgroundColor: '#002DFF', 
+    backgroundColor: '#05103A', 
     paddingVertical: 18, 
-    borderRadius: 40, 
-    marginTop: 20, 
-    alignItems: 'center',
-    elevation: 3
+    borderRadius: 30, 
+    marginTop: 10, 
+    marginBottom: 30,
+    alignItems: 'center'
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 25 },
-  line: { flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  orText: { marginHorizontal: 10, color: '#666', fontWeight: '600' },
-  googleBtn: { 
-    flexDirection: 'row',
-    backgroundColor: '#fff', 
-    paddingVertical: 16, 
-    borderRadius: 40, 
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    elevation: 1
-  },
-  googleBtnText: { color: '#000', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
-  loginLink: { marginTop: 25, alignItems: 'center' },
-  loginText: { fontSize: 16, color: '#000' },
-  loginBold: { fontWeight: 'bold', color: '#002DFF' }
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  loginLink: { alignItems: 'center' },
+  loginText: { fontSize: 15, color: '#333' },
+  loginBold: { fontWeight: 'bold', color: '#05103A' }
 });

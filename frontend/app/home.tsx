@@ -35,7 +35,6 @@ export default function HomePage() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch products
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -45,7 +44,6 @@ export default function HomePage() {
       setProducts(Array.isArray(response.products) ? response.products : response as any);
       setFilteredProducts(Array.isArray(response.products) ? response.products : response as any);
       
-      // Fetch user wishlist if logged in
       if (isLoggedIn) {
         await fetchUserWishlist();
       }
@@ -53,7 +51,6 @@ export default function HomePage() {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load products';
       setError(errorMsg);
       console.error('Fetch products error:', err);
-      Alert.alert("Error", errorMsg);
     } finally {
       setLoading(false);
     }
@@ -62,12 +59,9 @@ export default function HomePage() {
   const fetchUserWishlist = async () => {
     try {
       if (!isLoggedIn) return;
-      
       const wishlistItems = await wishlistService.getWishlist();
       const favMap: { [key: string]: boolean } = {};
-      wishlistItems.forEach((item: Product) => { 
-        favMap[item._id] = true; 
-      });
+      wishlistItems.forEach((item: Product) => { favMap[item._id] = true; });
       setFavorites(favMap);
     } catch (err) { 
       console.error("Wishlist sync error", err); 
@@ -78,7 +72,6 @@ export default function HomePage() {
     fetchProducts();
   }, [isLoggedIn]);
 
-  // Filter by category
   useEffect(() => {
     if (category) {
       const filtered = products.filter(item => 
@@ -90,7 +83,6 @@ export default function HomePage() {
     }
   }, [category, products]);
 
-  // Handle search
   const handleSearch = (text: string) => {
     setSearch(text);
     const filtered = products.filter(item => 
@@ -103,7 +95,6 @@ export default function HomePage() {
   const toggleFavorite = async (productId: string) => {
     if (!isLoggedIn) {
       Alert.alert("Please Log In", "You need to log in to add items to your wishlist.");
-      router.push('/signup');
       return;
     }
 
@@ -114,11 +105,12 @@ export default function HomePage() {
     try {
       if (isCurrentlyFavorite) {
         await wishlistService.removeFromWishlist(productId);
+        Alert.alert("Removed from Wishlist", "Item removed from your wishlist.");
       } else {
         await wishlistService.addToWishlist(productId);
+        Alert.alert("Product added to Wishlist", "Item has been added successfully.");
       }
     } catch (error) {
-      // Revert on error
       setFavorites(favorites);
       Alert.alert("Error", "Failed to update wishlist");
     }
@@ -127,16 +119,14 @@ export default function HomePage() {
   const addToCart = async (product: Product) => {
     if (!isLoggedIn) {
       Alert.alert("Please Log In", "You need to log in to add items to your cart.");
-      router.push('/signup');
       return;
     }
 
     try {
       await cartService.updateCart(product._id, 'add');
-      Alert.alert("Success", `${product.name} added to basket!`);
+      Alert.alert("Product added to Basket", `${product.name} has been added successfully.`);
     } catch (error) {
       Alert.alert("Error", "Failed to add to cart. Please try again.");
-      console.error('Add to cart error:', error);
     }
   };
 
@@ -155,15 +145,8 @@ export default function HomePage() {
         })}
       >
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: item.image }} 
-            style={styles.img}
-            onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-          />
-          <TouchableOpacity 
-            style={styles.heart} 
-            onPress={() => toggleFavorite(item._id)}
-          >
+          <Image source={{ uri: item.image }} style={styles.img} />
+          <TouchableOpacity style={styles.heart} onPress={() => toggleFavorite(item._id)}>
             <Ionicons 
               name={favorites[item._id] ? "heart" : "heart-outline"} 
               size={22} 
@@ -171,73 +154,50 @@ export default function HomePage() {
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.prodTitle} numberOfLines={2}>{item.name}</Text>
-        <View style={styles.ratingRow}>
-          <Ionicons name="star" size={14} color="#FFB800" />
-          <Text style={styles.ratingText}>{item.rating?.toFixed(1) || '4.5'}</Text>
-        </View>
-        <Text style={styles.prodPrice}>${item.price?.toFixed(2) || '0.00'}</Text>
+        <Text style={styles.prodTitle} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.prodPrice}>${item.price?.toFixed(0) || '0'}</Text>
       </TouchableOpacity>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity 
-          style={styles.cartBtn} 
-          onPress={() => addToCart(item)}
-        >
+        <TouchableOpacity style={styles.cartBtn} onPress={() => addToCart(item)}>
           <Ionicons name="cart-outline" size={18} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.buyBtn} 
-          onPress={() => router.push('/checkout')}
-        >
-          <Text style={styles.buyBtnText}>Buy</Text>
+        <TouchableOpacity style={styles.buyBtn} onPress={() => router.push('/checkout')}>
+          <Text style={styles.buyBtnText}>Buy Now</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  if (loading && !refreshing) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#002DFF" style={{ marginTop: 50 }} />
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#05103A" />
       
       <View style={styles.header}>
+        <SafeAreaView edges={['top']} />
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color="#888" />
             <TextInput 
               style={styles.searchInput} 
-              placeholder="Search product..." 
+              placeholder="Search product here..." 
               placeholderTextColor="#999"
               value={search}
               onChangeText={handleSearch}
             />
           </View>
-          <TouchableOpacity 
-            style={styles.filterBtn} 
-            onPress={() => router.push('/categories' as any)}
-          >
-            <Ionicons name="options-outline" size={24} color="#000" />
+          <TouchableOpacity style={styles.filterBtn} onPress={() => router.push('/categories' as any)}>
+            <Ionicons name="options-outline" size={24} color="#05103A" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.heroRow}>
           <Text style={styles.heroText}>
-            {category ? `${category} Collection` : "Welcome to Shop"}
+            {category ? `${category}` : "Shop Smart, Save"}
           </Text>
           {!isLoggedIn && (
-            <TouchableOpacity 
-              style={styles.loginBtn}
-              onPress={() => router.push('/signup')}
-            >
-              <Text style={styles.loginBtnText}>Sign In</Text>
+            <TouchableOpacity onPress={() => router.push('/signup')}>
+              <Text style={{color: '#fff'}}>Sign In</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -249,14 +209,13 @@ export default function HomePage() {
         </View>
       )}
 
-      {filteredProducts.length === 0 && !loading ? (
+      {loading && !refreshing ? (
+        <ActivityIndicator size="large" color="#05103A" style={{ marginTop: 50 }} />
+      ) : filteredProducts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="cube-outline" size={64} color="#ccc" />
+          <Ionicons name="cube-outline" size={64} color="#999" />
           <Text style={styles.emptyText}>No products found</Text>
-          <TouchableOpacity 
-            style={styles.retryBtn}
-            onPress={fetchProducts}
-          >
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchProducts}>
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -267,108 +226,94 @@ export default function HomePage() {
           keyExtractor={(item) => item._id} 
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           renderItem={renderProductCard}
         />
       )}
 
       {/* Navigation Bar */}
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
-          <Ionicons name="home" size={28} color="#002DFF" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
-          <Ionicons name="list" size={28} color="#777" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket')}>
-          <Ionicons name="basket" size={28} color="#777" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
-          <Ionicons name="person" size={28} color="#777" />
-        </TouchableOpacity>
+      <View style={styles.navBarContainer}>
+        <View style={styles.navBar}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+            <Ionicons name="home" size={26} color="#002DFF" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/categories')}>
+            <Ionicons name="list" size={26} color="#4A4A4A" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/basket')}>
+            <Ionicons name="basket" size={26} color="#4A4A4A" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
+            <Ionicons name="person" size={26} color="#4A4A4A" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
   header: { 
-    backgroundColor: '#000C33', 
+    backgroundColor: '#05103A', 
     paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'android' ? 40 : 20, 
-    paddingBottom: 25 
+    paddingBottom: 25,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15
   },
-  searchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, marginTop: 10 },
   searchBar: { 
     flex: 1, 
     backgroundColor: '#fff', 
-    height: 50, 
+    height: 45, 
     borderRadius: 25, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    paddingHorizontal: 20, 
-    marginRight: 15 
+    paddingHorizontal: 15, 
+    marginRight: 10 
   },
   searchInput: { flex: 1, marginLeft: 10, color: '#000' },
-  filterBtn: { backgroundColor: '#fff', padding: 12, borderRadius: 12 },
-  heroRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-  },
-  heroText: { color: '#fff', fontSize: 22, fontWeight: 'bold', flex: 1 },
-  loginBtn: { backgroundColor: '#002DFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  loginBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  filterBtn: { backgroundColor: '#fff', width: 45, height: 45, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
+  heroText: { color: '#fff', fontSize: 24, fontWeight: 'bold', fontStyle: 'italic', flex: 1 },
   errorBanner: { backgroundColor: '#FFE0E0', padding: 10, margin: 10, borderRadius: 8 },
   errorText: { color: '#D32F2F', fontSize: 12 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontSize: 16, color: '#999', marginTop: 10 },
-  retryBtn: { backgroundColor: '#002DFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, marginTop: 15 },
-  retryBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-  grid: { padding: 10, paddingBottom: 120 },
+  emptyText: { fontSize: 16, color: '#666', marginTop: 10 },
+  retryBtn: { backgroundColor: '#05103A', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, marginTop: 15 },
+  retryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  grid: { padding: 10, paddingBottom: 100 },
   card: { 
     flex: 1, 
     margin: 8, 
     backgroundColor: '#fff', 
     borderRadius: 20, 
-    padding: 10, 
+    padding: 12, 
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  imageContainer: { width: '100%', aspectRatio: 1, borderRadius: 15, overflow: 'hidden' },
+  imageContainer: { width: '100%', aspectRatio: 1, borderRadius: 15, overflow: 'hidden', backgroundColor: '#f0f0f0' },
   img: { width: '100%', height: '100%', resizeMode: 'cover' },
   heart: { position: 'absolute', top: 10, right: 10, zIndex: 1 },
-  prodTitle: { fontWeight: 'bold', marginTop: 10, fontSize: 14, color: '#000' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  ratingText: { marginLeft: 4, fontSize: 12, color: '#666' },
-  prodPrice: { color: '#002DFF', fontWeight: 'bold', marginBottom: 5, marginTop: 3 },
-  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 },
-  cartBtn: { backgroundColor: '#002DFF', padding: 8, borderRadius: 10, flex: 0.4, alignItems: 'center' },
-  buyBtn: { backgroundColor: '#000C33', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, flex: 0.4, alignItems: 'center' },
+  prodTitle: { fontWeight: 'bold', marginTop: 12, fontSize: 14, color: '#000' },
+  prodPrice: { color: '#000', fontSize: 13, marginBottom: 10, marginTop: 4 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cartBtn: { backgroundColor: '#002DFF', width: 35, height: 35, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  buyBtn: { backgroundColor: '#05103A', height: 35, paddingHorizontal: 15, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flex: 1, marginLeft: 10 },
   buyBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  navBarContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
   navBar: { 
-    position: 'absolute', 
-    bottom: 20, 
-    left: 20, 
-    right: 20, 
-    height: 75, 
-    backgroundColor: '#fff', 
+    backgroundColor: '#6A6A6A', // Grey translucent look
     borderRadius: 40, 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
     alignItems: 'center', 
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    height: 65,
+    opacity: 0.95
   },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' }
 });
-

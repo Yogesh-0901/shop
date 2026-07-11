@@ -7,28 +7,29 @@ import {
   TouchableOpacity, 
   SafeAreaView, 
   StatusBar, 
-  Alert 
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/api';
 
 export default function ForgotPassword() {
   const router = useRouter();
 
-  // State definitions with explicit types
   const [email, setEmail] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Integrated single function for validation and backend call
   const handleResetPassword = async (): Promise<void> => {
-    // 1. Basic validation (empty check)
     if (!email.trim() || !newPassword.trim() || !confirmPassword.trim()) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
-    // 2. Gmail Validation
     const gmailRegex: RegExp = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
     if (!gmailRegex.test(email)) {
       Alert.alert(
@@ -38,28 +39,24 @@ export default function ForgotPassword() {
       return;
     }
 
-    // 3. Password Match check
     if (newPassword !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match!");
       return;
     }
 
-    // 4. Password length check
     if (newPassword.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
 
-    // 5. Backend Integration (Using updated IP and safety parsing)
+    setLoading(true);
     try {
-      // URL UPDATED: Corrected path to match /api/auth prefix
       const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword }),
+        body: JSON.stringify({ email, newPassword, confirmPassword }),
       });
 
-      // Get response as text first to handle potential HTML errors safely
       const responseText = await response.text();
       
       try {
@@ -72,98 +69,102 @@ export default function ForgotPassword() {
           Alert.alert("Error", data.error || "Reset failed");
         }
       } catch (parseError) {
-        // This catches the "<" character crash caused by HTML error pages
         console.error("Server Error Response:", responseText);
         Alert.alert("Server Error", "Invalid response from server. Please check your backend terminal.");
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Network error";
       Alert.alert("Error", "Could not connect to the server. Check your IP and Wi-Fi.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backArrow}>〈</Text>
-      </TouchableOpacity>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.inner}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={28} color="#000" />
+            </TouchableOpacity>
 
-      <View style={styles.inner}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.instruction}>
-          Enter your email and create a new password to regain access to your account.
-        </Text>
-        
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput 
-            style={styles.input} 
-            placeholder="your@gmail.com" 
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.instruction}>
+              Enter your email and create a new password to regain access to your account.
+            </Text>
+            
+            <View style={styles.formContainer}>
+              <TextInput 
+                style={styles.input} 
+                placeholder="your@gmail.com" 
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!loading}
+              />
 
-        <View style={[styles.inputBox, { marginTop: 20 }]}>
-          <Text style={styles.label}>New Password</Text>
-          <TextInput 
-            style={styles.input} 
-            placeholder="******" 
-            placeholderTextColor="#aaa"
-            secureTextEntry={true}
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-        </View>
+              <TextInput 
+                style={styles.input} 
+                placeholder="New Password" 
+                placeholderTextColor="#666"
+                secureTextEntry={true}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                editable={!loading}
+              />
 
-        <View style={[styles.inputBox, { marginTop: 20 }]}>
-          <Text style={styles.label}>Confirm Password</Text>
-          <TextInput 
-            style={styles.input} 
-            placeholder="******" 
-            placeholderTextColor="#aaa"
-            secureTextEntry={true}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-        </View>
+              <TextInput 
+                style={styles.input} 
+                placeholder="Confirm Password" 
+                placeholderTextColor="#666"
+                secureTextEntry={true}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                editable={!loading}
+              />
 
-        <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
-          <Text style={styles.buttonText}>RESET PASSWORD</Text>
-        </TouchableOpacity>
-      </View>
+              <TouchableOpacity 
+                style={[styles.button, loading && styles.buttonDisabled]} 
+                onPress={handleResetPassword}
+                disabled={loading}
+              >
+                <Text style={styles.buttonText}>{loading ? 'RESETTING...' : 'RESET PASSWORD'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#D2B2AE' },
-  backButton: { padding: 25 },
-  backArrow: { fontSize: 24, color: '#000' },
-  inner: { flex: 1, paddingHorizontal: 35 },
-  title: { fontSize: 40, fontWeight: 'bold', marginBottom: 20, color: '#000' },
-  instruction: { fontSize: 14, color: '#000', marginBottom: 40, lineHeight: 20 },
-  inputBox: { 
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center' },
+  inner: { paddingHorizontal: 30, paddingVertical: 40 },
+  backButton: { marginBottom: 20 },
+  title: { fontSize: 36, fontWeight: 'bold', color: '#000', marginBottom: 15 },
+  instruction: { fontSize: 15, color: '#333', marginBottom: 40, lineHeight: 22 },
+  formContainer: { width: '100%' },
+  input: { 
     backgroundColor: '#fff', 
-    borderRadius: 12, 
-    paddingHorizontal: 15, 
-    paddingVertical: 12, 
-    elevation: 3,
+    borderRadius: 10, 
+    paddingHorizontal: 20,
+    paddingVertical: 18, 
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#000'
   },
-  label: { fontSize: 12, color: '#aaa', marginBottom: 4 },
-  input: { fontSize: 16, color: '#000', paddingVertical: 5 },
   button: { 
-    backgroundColor: '#000C33', 
-    width: '100%', 
-    paddingVertical: 20, 
-    borderRadius: 40, 
-    marginTop: 50, 
-    alignItems: 'center' 
+    backgroundColor: '#05103A', 
+    paddingVertical: 18, 
+    borderRadius: 30, 
+    marginTop: 10, 
+    alignItems: 'center'
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 18 }
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

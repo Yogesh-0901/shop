@@ -16,6 +16,8 @@ import {
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { API_BASE_URL } from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
+import cartService from '../services/cartService';
 
 const { width } = Dimensions.get('window');
 
@@ -30,28 +32,23 @@ export default function ProductDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
-  // --- Backend Sync States ---
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<any[]>([]);
   
-  // --- UI States ---
   const [selectedColor, setSelectedColor] = useState('1');
   const [modalVisible, setModalVisible] = useState(false);
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
 
-  const userId = "rose@gmail.com"; 
+  const { isLoggedIn, user } = useAuth();
 
-  // 1. UPDATED: Fetch Product Data with HTML Safety Check
   const fetchProductDetails = async (productId: string) => {
     setLoading(true);
     try {
-      // Must include /api prefix to match your server.js setup
       const response = await fetch(`${API_BASE_URL}/api/products/${productId}`);
       const text = await response.text(); 
 
-      // Prevents the "Unexpected character: <" crash by identifying HTML
       if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
         Alert.alert("Configuration Error", "Server returned HTML instead of JSON. Check backend routes.");
         return;
@@ -76,43 +73,24 @@ export default function ProductDetails() {
     if (id) fetchProductDetails(id as string);
   }, [id]);
 
-  // 2. UPDATED: New addToCart Function with Safety Checks
   const addToCart = async () => {
     if (!product) return;
+    if (!isLoggedIn) {
+      Alert.alert("Please Log In", "You need to log in to add items to your cart.");
+      router.push('/');
+      return;
+    }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/cart/${userId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: product._id,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          action: 'add' 
-        }),
-      });
-
-      const text = await response.text();
-      
-      if (text.startsWith('<html')) {
-        Alert.alert("Server Error", "Invalid response from server. Check backend console.");
-        return;
-      }
-
-      const data = JSON.parse(text);
-      if (response.ok) {
-        Alert.alert("Success", `${product.name} added to basket!`);
-        router.push('/basket' as any); 
-      } else {
-        Alert.alert("Error", data.error || "Could not add item.");
-      }
+      await cartService.updateCart(product._id, 'add');
+      Alert.alert("Product added to Basket", `${product.name} has been added successfully.`);
+      router.push('/basket' as any); 
     } catch (error) {
-      Alert.alert("Network Error", "Could not connect to the server.");
+      const errorMsg = error instanceof Error ? error.message : "Could not add item.";
+      Alert.alert("Error", errorMsg);
     }
   };
 
-  // 3. UPDATED: Submit Review Logic with HTML Safety Check
   const submitReview = async () => {
     if (!rating || !reviewText.trim()) {
       Alert.alert('Error', 'Please give rating and write a review');
@@ -124,7 +102,7 @@ export default function ProductDetails() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user: 'Professor', 
+          user: user?.fullName || 'User', 
           stars: rating,
           comment: reviewText,
           userImage: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
@@ -153,7 +131,7 @@ export default function ProductDetails() {
     }
   };
 
-  if (loading) return <ActivityIndicator size="large" color="#000C33" style={{flex: 1}} />;
+  if (loading) return <ActivityIndicator size="large" color="#05103A" style={{flex: 1}} />;
   if (!product) return <View style={styles.center}><Text>Product not found</Text></View>;
 
   return (
@@ -163,7 +141,7 @@ export default function ProductDetails() {
         <View style={styles.imageContainer}>
           <Image source={{ uri: product.image }} style={styles.productImage} />
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={28} color="#333" />
+            <Ionicons name="chevron-back-outline" size={28} color="#000" />
           </TouchableOpacity>
         </View>
 
@@ -171,12 +149,12 @@ export default function ProductDetails() {
           <View style={styles.rowBetween}>
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{product.name}</Text>
-              <Text style={styles.subtitle}>{product.category}</Text>
+              <Text style={styles.subtitle}>{product.category} Style</Text>
             </View>
             <Text style={styles.price}>${product.price}</Text>
           </View>
 
-          <Text style={styles.sectionTitle}>Available Colors</Text>
+          <Text style={styles.sectionTitle}>Color</Text>
           <View style={styles.colorRow}>
             {PRODUCT_COLORS.map((c) => (
               <TouchableOpacity
@@ -188,7 +166,7 @@ export default function ProductDetails() {
                 ]}
                 onPress={() => setSelectedColor(c.id)}
               >
-                {selectedColor === c.id && <Ionicons name="checkmark" color="#fff" size={20} />}
+                {selectedColor === c.id && <Ionicons name="checkmark" color="#fff" size={16} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -207,7 +185,7 @@ export default function ProductDetails() {
                   <Text style={styles.userName}>{r.user}</Text>
                   <View style={{ flexDirection: 'row' }}>
                     {Array.from({ length: r.stars || 0 }).map((_, i) => (
-                      <MaterialIcons key={i} name="star" size={16} color="#C4A484" />
+                      <MaterialIcons key={i} name="star" size={16} color="#FFB800" />
                     ))}
                   </View>
                 </View>
@@ -222,7 +200,7 @@ export default function ProductDetails() {
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cartBtn} onPress={addToCart}>
-              <Feather name="shopping-cart" size={26} color="#002DFF" />
+              <Ionicons name="basket" size={28} color="#002DFF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.buyBtn} onPress={() => router.push('/checkout' as any)}>
               <Text style={styles.buyText}>Buy now</Text>
@@ -242,7 +220,7 @@ export default function ProductDetails() {
                   <MaterialIcons
                     name={num <= rating ? 'star' : 'star-border'}
                     size={35}
-                    color="#C4A484"
+                    color="#FFB800"
                   />
                 </TouchableOpacity>
               ))}
@@ -269,38 +247,37 @@ export default function ProductDetails() {
   );
 }
 
-// ... styles remain the same
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#D2B2AE' },
+  container: { flex: 1, backgroundColor: '#D8B4A0' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  imageContainer: { height: 380, width: '100%' },
-  productImage: { width: '100%', height: '100%', borderBottomLeftRadius: 40, borderBottomRightRadius: 40 },
-  backButton: { position: 'absolute', top: 50, left: 20, backgroundColor: '#fff', borderRadius: 20, padding: 5, zIndex: 10 },
+  imageContainer: { height: 480, width: '100%', borderBottomLeftRadius: 40, borderBottomRightRadius: 40, overflow: 'hidden' },
+  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  backButton: { position: 'absolute', top: 50, left: 20, zIndex: 10 },
   content: { padding: 25 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#000' },
-  subtitle: { color: '#6e5e5b', fontSize: 16, marginTop: 4 },
-  price: { fontSize: 28, fontWeight: 'bold', color: '#000C33' },
-  sectionTitle: { marginTop: 25, fontSize: 18, fontWeight: 'bold', color: '#000' },
-  colorRow: { flexDirection: 'row', marginTop: 15, gap: 15 },
-  colorCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', elevation: 4 },
-  selectedCircle: { borderWidth: 3, borderColor: '#fff' },
-  desc: { marginTop: 12, color: '#333', lineHeight: 22, fontSize: 15 },
-  reviewCard: { backgroundColor: 'rgba(255,255,255,0.4)', padding: 15, borderRadius: 15, marginTop: 10 },
+  title: { fontSize: 24, fontWeight: '700', color: '#000' },
+  subtitle: { color: '#666', fontSize: 13, marginTop: 4 },
+  price: { fontSize: 24, fontWeight: 'bold', color: '#000' },
+  sectionTitle: { marginTop: 25, fontSize: 14, fontWeight: '700', color: '#000' },
+  colorRow: { flexDirection: 'row', marginTop: 10, gap: 12 },
+  colorCircle: { width: 24, height: 24, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  selectedCircle: { borderWidth: 2, borderColor: '#fff', transform: [{ scale: 1.1 }] },
+  desc: { marginTop: 10, color: '#333', lineHeight: 20, fontSize: 12 },
+  reviewCard: { backgroundColor: 'rgba(255,255,255,0.6)', padding: 15, borderRadius: 15, marginTop: 15, elevation: 1 },
   reviewHeader: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },
-  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
-  userName: { fontWeight: '700', fontSize: 14 },
-  reviewText: { fontStyle: 'italic', color: '#444', fontSize: 14 },
-  writeBtn: { alignSelf: 'center', backgroundColor: '#000C33', paddingHorizontal: 40, paddingVertical: 12, borderRadius: 25, marginTop: 25 },
+  avatar: { width: 45, height: 45, borderRadius: 25, marginRight: 15 },
+  userName: { fontWeight: 'bold', fontSize: 16, color: '#000' },
+  reviewText: { fontStyle: 'italic', color: '#444', fontSize: 14, marginTop: 5 },
+  writeBtn: { alignSelf: 'center', backgroundColor: '#05103A', paddingHorizontal: 40, paddingVertical: 12, borderRadius: 25, marginTop: 30 },
   writeText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   footer: { flexDirection: 'row', marginTop: 40, paddingBottom: 30, alignItems: 'center' },
-  cartBtn: { width: 60, height: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', borderRadius: 30, marginRight: 20 },
-  buyBtn: { flex: 1, backgroundColor: '#000C33', borderRadius: 30, height: 60, justifyContent: 'center', alignItems: 'center' },
-  buyText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  cartBtn: { width: 55, height: 55, justifyContent: 'center', alignItems: 'center', backgroundColor: '#D8B4A0', borderRadius: 15, marginRight: 20 },
+  buyBtn: { flex: 1, backgroundColor: '#05103A', borderRadius: 30, height: 55, justifyContent: 'center', alignItems: 'center' },
+  buyText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
   modalBox: { width: '85%', backgroundColor: '#fff', borderRadius: 20, padding: 25 },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 15 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 15, color: '#000' },
   modalInput: { height: 120, borderWidth: 1, borderColor: '#eee', borderRadius: 12, padding: 15, textAlignVertical: 'top', backgroundColor: '#f9f9f9', fontSize: 16 },
   modalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 25, alignItems: 'center' },
-  submitBtn: { backgroundColor: '#000C33', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 20 }
+  submitBtn: { backgroundColor: '#05103A', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 20 }
 });

@@ -165,4 +165,3 @@ exports.createProduct = async (req, res) => {
         res.status(500).json({ error: "Product creation failed: " + error.message });
     }
 };
-};
