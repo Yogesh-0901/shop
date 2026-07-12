@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "MyDesignApp",
-    "slug": "MyDesignApp",
+    "name": "Fashion Fusion",
+    "slug": "fashion-fusion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mydesignapp",
+    "scheme": "fashionfusion",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,13 +13,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#94D2EE",
+        "foregroundImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.yogeshwarie.fashionfusion"
     },
     "web": {
       "output": "static",
@@ -33,9 +32,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#94D2EE",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#94D2EE"
           }
         }
       ],
@@ -44,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f7463fef-6174-4411-9c85-ccca381f225d"
+      }
+    },
+    "owner": "yogeshwarie"
   }
 }
